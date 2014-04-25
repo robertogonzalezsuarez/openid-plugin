@@ -79,6 +79,7 @@ public class OpenIdLoginService extends FederatedLoginService {
     public HttpResponse doStartLogin(@QueryParameter String openid, @QueryParameter String openid_identifier, @QueryParameter final String from) throws OpenIDException, IOException {
         // if the script doesn't work, it'll submit 'openid_identifier'
         // <INPUT type=text NAME=openid/> is programmatically constructed
+    	System.out.println("log1: doStartLogin de OpenIdLoginService con openId="+openid+ " y open_ididentifier="+openid_identifier+" y from="+from);
         if (openid==null)       openid = openid_identifier;
 
         return new OpenIdSession(manager,openid,"federatedLoginService/openid/finish") {
@@ -94,6 +95,7 @@ public class OpenIdLoginService extends FederatedLoginService {
     }
 
     public HttpResponse doFinish(StaplerRequest request) throws IOException, OpenIDException {
+    	System.out.println("log1: doFinish de OpenIdLoginServise");
         OpenIdSession session = OpenIdSession.getCurrent();
         if (session==null)
             throw new Failure(Messages.OpenIdLoginService_SessionNotFound());

@@ -59,6 +59,7 @@ import org.openid4java.util.ProxyProperties;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 import jenkins.model.Jenkins;
@@ -75,12 +76,24 @@ public class OpenIdSsoSecurityRealm extends SecurityRealm {
     // for example, https://login.launchpad.net/+openid
     // 
     public final String endpoint;
+    public String[] endpoints;
+    public boolean multipleEndpoints;
 
     private transient volatile DiscoveryInformation discoveredEndpoint;
+    private transient volatile ArrayList<DiscoveryInformation> discoveredEndpoints;
 
     @DataBoundConstructor
     public OpenIdSsoSecurityRealm(String endpoint) throws IOException, OpenIDException {
         this.endpoint = endpoint;
+        getDiscoveredEndpoint();
+    }
+    
+    
+    //constructor for multiple endpoints
+ 
+    public void multipleOpenIdSsoSecurityRealm(String[] endpoint) throws IOException, OpenIDException {
+        multipleEndpoints = true;
+        endpoints = endpoint;
         getDiscoveredEndpoint();
     }
 
@@ -114,18 +127,42 @@ public class OpenIdSsoSecurityRealm extends SecurityRealm {
     }
 
     private DiscoveryInformation getDiscoveredEndpoint() throws IOException, OpenIDException {
-        if (discoveredEndpoint==null) {
-            // pretend that the endpoint URL is by itself an OpenID and find out an endpoint
-            // if that fails, assume  that the endpoint URL is the real endpoint URL.
-            Discovery d = new Discovery();
-            d.setYadisResolver(new YadisResolver2());
-            List r = d.discover(endpoint);
-            if (r == null || r.isEmpty()) {
-                discoveredEndpoint = new DiscoveryInformation(new URL(endpoint));
-            } else {
-                discoveredEndpoint = (DiscoveryInformation) r.get(0);
+    	
+    	System.out.println("getDiscoveredEndpoint con multipleEndpoints="+multipleEndpoints + " y endpoint="+endpoint + "y endpoints="+endpoints);
+    	if (multipleEndpoints) {
+            if (discoveredEndpoints==null) {
+                // pretend that the endpoint URL is by itself an OpenID and find out an endpoint
+                // if that fails, assume  that the endpoint URL is the real endpoint URL.
+                Discovery d = new Discovery();
+                d.setYadisResolver(new YadisResolver2());
+                this.discoveredEndpoints = new ArrayList<DiscoveryInformation>();
+                for (int i=0;i<endpoints.length;i++) {
+                	  List r = d.discover(endpoints[i]);
+                      if (r == null || r.isEmpty()) {
+                    	  this.discoveredEndpoints.add(new DiscoveryInformation(new URL(endpoints[i])));
+                      } else {
+                    	  this.discoveredEndpoints.add((DiscoveryInformation) r.get(0));
+                      }
+                }
+                discoveredEndpoint = this.discoveredEndpoints.get(0);
+              
             }
-        }
+    	}
+    	else
+    	{
+            if (discoveredEndpoint==null) {
+                // pretend that the endpoint URL is by itself an OpenID and find out an endpoint
+                // if that fails, assume  that the endpoint URL is the real endpoint URL.
+                Discovery d = new Discovery();
+                d.setYadisResolver(new YadisResolver2());
+                List r = d.discover(endpoint);
+                if (r == null || r.isEmpty()) {
+                    discoveredEndpoint = new DiscoveryInformation(new URL(endpoint));
+                } else {
+                    discoveredEndpoint = (DiscoveryInformation) r.get(0);
+                }
+            }
+    	}
         return discoveredEndpoint;
     }
 
@@ -163,6 +200,8 @@ public class OpenIdSsoSecurityRealm extends SecurityRealm {
      * The login process starts from here.
      */
     public HttpResponse doCommenceLogin(@QueryParameter String from) throws IOException, OpenIDException {
+    	
+    	System.out.println("log1: doCommenceLogin de OpenIdSsoSecurityRealm con from="+from);
         if (from == null || !from.startsWith("/")) {
             if (Stapler.getCurrentRequest().getHeader("Referer") != null) {
                 from = Stapler.getCurrentRequest().getHeader("Referer");
@@ -177,6 +216,7 @@ public class OpenIdSsoSecurityRealm extends SecurityRealm {
             @Override
             protected HttpResponse onSuccess(Identity id) throws IOException {
                 // logs this user in.
+            	System.out.println("log1: logeando onsuccess openidSecurityRealm con id.email="+id.getEmail());
                 UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
                         id.getEffectiveNick(), "", id.getGrantedAuthorities().toArray(new GrantedAuthority[id.getGrantedAuthorities().size()]));
                 SecurityContextHolder.getContext().setAuthentication(token);

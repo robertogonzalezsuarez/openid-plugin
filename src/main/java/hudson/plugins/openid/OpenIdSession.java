@@ -69,6 +69,7 @@ public abstract class OpenIdSession {
         this.finishUrl = finishUrl;
 
         try {
+        	System.out.println("llamando desde Openidsession a Discover - linea 72");
             List discoveries = manager.discover(openid);
             endpoint = manager.associate(discoveries);
         } catch (DiscoveryException e) {
@@ -80,6 +81,7 @@ public abstract class OpenIdSession {
      * Starts the login session.
      */
     public HttpResponse doCommenceLogin() throws IOException, OpenIDException {
+    	System.out.println("log1: doCommenceLogin de OpenIdSession con endpoint="+endpoint);
         final AuthRequest authReq = manager.authenticate(endpoint, Hudson.getInstance().getRootUrl()+ finishUrl);
 
         OpenIdExtension.extendRequest(authReq);
@@ -96,6 +98,8 @@ public abstract class OpenIdSession {
      * When the identity provider is done with its thing, the user comes back here.
      */
     public HttpResponse doFinishLogin(StaplerRequest request) throws IOException, OpenIDException {
+
+    	System.out.println("log1: doFinishLogin de OpenIdSession con endpoint="+endpoint);
         // extract the parameters from the authentication process
         // (which comes in as a HTTP extend from the OpenID provider)
         ParameterList responselist = new ParameterList(request.getParameterMap());
